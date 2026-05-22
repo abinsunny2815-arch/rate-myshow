@@ -1,0 +1,105 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ user_obj.display_name }} - Profile - RateMyShow{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Profile Header -->
+    <div class="bg-gray-800 rounded-lg p-8 mb-8 border border-gray-700">
+        <div class="flex flex-col md:flex-row gap-8">
+            <!-- Avatar -->
+            <div>
+                {% if user_obj.avatar %}
+                <img src="{{ user_obj.avatar.url }}" alt="{{ user_obj.display_name }}" class="w-32 h-32 rounded-full">
+                {% else %}
+                <div class="w-32 h-32 rounded-full bg-red-600 flex items-center justify-center">
+                    <span class="text-5xl font-bold">{{ user_obj.username|first|upper }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Profile Info -->
+            <div class="flex-1">
+                <h1 class="text-4xl font-bold mb-2">{{ user_obj.display_name }}</h1>
+                {% if user_obj.bio %}
+                <p class="text-gray-300 mb-4">{{ user_obj.bio }}</p>
+                {% endif %}
+
+                <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <p class="text-2xl font-bold text-red-600">{{ ratings_count }}</p>
+                        <p class="text-gray-400">Ratings</p>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-red-600">{{ reviews_count }}</p>
+                        <p class="text-gray-400">Reviews</p>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-red-600">{{ watchlist_count }}</p>
+                        <p class="text-gray-400">Watchlist</p>
+                    </div>
+                </div>
+
+                {% if user == request.user %}
+                <a href="{% url 'users:profile_edit' %}"
+                    class="px-4 py-2 bg-red-600 rounded-lg hover:bg-red-700 transition">
+                    <i class="fas fa-edit mr-2"></i> Edit Profile
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Recent Ratings -->
+        <div class="lg:col-span-2">
+            <h2 class="text-2xl font-bold mb-4">Recent Ratings</h2>
+            {% if recent_ratings %}
+            <div class="space-y-4">
+                {% for rating in recent_ratings %}
+                <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <a href="{{ rating.title.get_absolute_url }}" class="font-bold hover:text-red-600">
+                                {{ rating.title.title }}
+                            </a>
+                            <div class="flex gap-1 mt-2">
+                                {% for i in "12345678910"|slice:":10" %}
+                                {% if i|add:"0" <= rating.score %} <i class="fas fa-star text-yellow-400"></i>
+                                    {% else %}
+                                    <i class="far fa-star text-gray-600"></i>
+                                    {% endif %}
+                                    {% endfor %}
+                            </div>
+                        </div>
+                        <span class="text-gray-400 text-sm">{{ rating.created_at|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-400">No ratings yet.</p>
+            {% endif %}
+        </div>
+
+        <!-- Recent Reviews -->
+        <div>
+            <h2 class="text-2xl font-bold mb-4">Recent Reviews</h2>
+            {% if recent_reviews %}
+            <div class="space-y-4">
+                {% for review in recent_reviews %}
+                <a href="{{ review.title.get_absolute_url }}"
+                    class="bg-gray-800 p-4 rounded-lg border border-gray-700 hover:border-red-600 transition block">
+                    <p class="font-bold truncate">{{ review.title.title }}</p>
+                    <p class="text-sm text-gray-400">{{ review.created_at|date:"M d, Y" }}</p>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-400">No reviews yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

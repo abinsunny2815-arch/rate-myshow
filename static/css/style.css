@@ -1,0 +1,99 @@
+/* RateMyShow Custom Styles */
+
+/* Form inputs */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea,
+select {
+    @apply w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+textarea:focus,
+select:focus {
+    @apply outline-none border-red-600 ring-1 ring-red-600;
+}
+
+/* Buttons */
+button,
+.btn {
+    @apply transition duration-200;
+}
+
+button:hover,
+.btn:hover {
+    @apply transform;
+}
+
+/* Stars Rating */
+.star-rating {
+    @apply flex gap-1;
+}
+
+.star-rating i {
+    @apply text-2xl cursor-pointer transition;
+}
+
+.star-rating i.fas {
+    @apply text-yellow-400;
+}
+
+.star-rating i.far {
+    @apply text-gray-600 hover:text-yellow-400;
+}
+
+/* Card Hover Effects */
+.card {
+    @apply transition duration-300 transform;
+}
+
+.card:hover {
+    @apply -translate-y-1 shadow-lg;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    @apply w-2 h-2;
+}
+
+::-webkit-scrollbar-track {
+    @apply bg-gray-900;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-gray-700 rounded-lg;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-600;
+}
+
+/* Smooth scrolling */
+html {
+    @apply scroll-smooth;
+}
+
+/* Loading Animation */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .hidden-mobile {
+        @apply hidden;
+    }
+
+    .grid-mobile {
+        @apply grid-cols-1;
+    }
+}

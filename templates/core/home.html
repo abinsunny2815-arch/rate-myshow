@@ -1,0 +1,224 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}Home - RateMyShow{% endblock %}
+
+{% block content %}
+<div class="min-h-screen">
+    <!-- Hero Section -->
+    {% if trending %}
+    {% with trending|first as hero %}
+    <div class="relative h-96 bg-gradient-to-b from-gray-900 to-gray-950 overflow-hidden">
+        {% if hero.poster_url %}
+        <img src="{{ hero.poster_url }}" alt="{{ hero.title }}"
+            class="absolute inset-0 w-full h-full object-cover opacity-20">
+        {% endif %}
+        <div class="absolute inset-0 bg-gradient-to-r from-gray-950 via-gray-950/80 to-transparent"></div>
+
+        <div class="relative max-w-7xl mx-auto px-4 h-full flex items-center">
+            <div class="max-w-md">
+                <h1 class="text-5xl font-bold mb-4">{{ hero.title }}</h1>
+                <p class="text-gray-300 mb-4 line-clamp-3">{{ hero.plot }}</p>
+                <div class="flex gap-4">
+                    <a href="{{ hero.get_absolute_url }}"
+                        class="px-6 py-3 bg-red-600 rounded-lg hover:bg-red-700 transition font-bold">
+                        <i class="fas fa-play mr-2"></i> View Details
+                    </a>
+                    {% if user.is_authenticated %}
+                    <button onclick="addToWatchlist('{{ hero.omdb_id }}')"
+                        class="px-6 py-3 border border-red-600 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition font-bold">
+                        <i class="fas fa-bookmark mr-2"></i> Add to Watchlist
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endwith %}
+    {% endif %}
+
+    <!-- Content Sections -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <!-- Trending This Week -->
+        {% if trending %}
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold mb-6">🔥 Trending This Week</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {% for title in trending|slice:":5" %}
+                <a href="{{ title.get_absolute_url }}" class="group">
+                    <div class="relative overflow-hidden rounded-lg">
+                        {% if title.poster_url %}
+                        <img src="{{ title.poster_url }}" alt="{{ title.title }}"
+                            class="w-full h-72 object-cover group-hover:scale-110 transition duration-300">
+                        {% else %}
+                        <div class="w-full h-72 bg-gray-800 flex items-center justify-center">
+                            <i class="fas fa-film text-4xl text-gray-600"></i>
+                        </div>
+                        {% endif %}
+                        <div
+                            class="absolute inset-0 bg-gradient-to-t from-black via-transparent opacity-0 group-hover:opacity-100 transition">
+                            <div class="absolute bottom-0 left-0 right-0 p-4">
+                                <h3 class="font-bold line-clamp-2">{{ title.title }}</h3>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <i class="fas fa-star text-yellow-400"></i>
+                                    <span>{{ title.avg_rating|floatformat:1 }}/10</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Popular Movies -->
+        {% if popular_movies %}
+        <section class="mb-16">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold">🎬 Popular Movies</h2>
+                <a href="{% url 'core:top_movies' %}" class="text-red-600 hover:text-red-700">View All →</a>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {% for movie in popular_movies|slice:":5" %}
+                <a href="{{ movie.get_absolute_url }}" class="group">
+                    <div class="relative overflow-hidden rounded-lg">
+                        {% if movie.poster_url %}
+                        <img src="{{ movie.poster_url }}" alt="{{ movie.title }}"
+                            class="w-full h-72 object-cover group-hover:scale-110 transition duration-300">
+                        {% else %}
+                        <div class="w-full h-72 bg-gray-800 flex items-center justify-center">
+                            <i class="fas fa-film text-4xl text-gray-600"></i>
+                        </div>
+                        {% endif %}
+                        <div
+                            class="absolute inset-0 bg-gradient-to-t from-black via-transparent opacity-0 group-hover:opacity-100 transition">
+                            <div class="absolute bottom-0 left-0 right-0 p-4">
+                                <h3 class="font-bold line-clamp-2">{{ movie.title }}</h3>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <i class="fas fa-star text-yellow-400"></i>
+                                    <span>{{ movie.avg_rating|floatformat:1 }}/10</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Top TV Shows -->
+        {% if top_tv_shows %}
+        <section class="mb-16">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold">📺 Top TV Shows</h2>
+                <a href="{% url 'core:top_tv_shows' %}" class="text-red-600 hover:text-red-700">View All →</a>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {% for show in top_tv_shows|slice:":5" %}
+                <a href="{{ show.get_absolute_url }}" class="group">
+                    <div class="relative overflow-hidden rounded-lg">
+                        {% if show.poster_url %}
+                        <img src="{{ show.poster_url }}" alt="{{ show.title }}"
+                            class="w-full h-72 object-cover group-hover:scale-110 transition duration-300">
+                        {% else %}
+                        <div class="w-full h-72 bg-gray-800 flex items-center justify-center">
+                            <i class="fas fa-film text-4xl text-gray-600"></i>
+                        </div>
+                        {% endif %}
+                        <div
+                            class="absolute inset-0 bg-gradient-to-t from-black via-transparent opacity-0 group-hover:opacity-100 transition">
+                            <div class="absolute bottom-0 left-0 right-0 p-4">
+                                <h3 class="font-bold line-clamp-2">{{ show.title }}</h3>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <i class="fas fa-star text-yellow-400"></i>
+                                    <span>{{ show.avg_rating|floatformat:1 }}/10</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Recommendations for logged-in users -->
+        {% if user.is_authenticated and recommendations %}
+        <section class="mb-16">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold">💡 Recommended For You</h2>
+                <a href="{% url 'recommendations:list' %}" class="text-red-600 hover:text-red-700">View All →</a>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {% for rec in recommendations|slice:":5" %}
+                <a href="{{ rec.title.get_absolute_url }}" class="group">
+                    <div class="relative overflow-hidden rounded-lg">
+                        {% if rec.title.poster_url %}
+                        <img src="{{ rec.title.poster_url }}" alt="{{ rec.title.title }}"
+                            class="w-full h-72 object-cover group-hover:scale-110 transition duration-300">
+                        {% else %}
+                        <div class="w-full h-72 bg-gray-800 flex items-center justify-center">
+                            <i class="fas fa-film text-4xl text-gray-600"></i>
+                        </div>
+                        {% endif %}
+                        <div
+                            class="absolute inset-0 bg-gradient-to-t from-black via-transparent opacity-0 group-hover:opacity-100 transition">
+                            <div class="absolute bottom-0 left-0 right-0 p-4">
+                                <h3 class="font-bold line-clamp-2">{{ rec.title.title }}</h3>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <i class="fas fa-star text-yellow-400"></i>
+                                    <span>{{ rec.title.avg_rating|floatformat:1 }}/10</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Recent Reviews -->
+        {% if recent_reviews %}
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold mb-6">📝 Latest Reviews</h2>
+            <div class="space-y-4">
+                {% for review in recent_reviews %}
+                <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 hover:border-red-600 transition">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <a href="{% url 'core:user_profile' review.user.username %}"
+                                class="font-bold hover:text-red-600">
+                                {{ review.user.display_name }}
+                            </a>
+                            <span class="text-gray-400 text-sm">reviewed</span>
+                            <a href="{{ review.title.get_absolute_url }}" class="font-bold hover:text-red-600">
+                                {{ review.title.title }}
+                            </a>
+                        </div>
+                        <span class="text-gray-400 text-sm">{{ review.created_at|timesince }} ago</span>
+                    </div>
+                    {% if review.title_review %}
+                    <h3 class="font-bold text-lg mb-2">{{ review.title_review }}</h3>
+                    {% endif %}
+                    <p class="text-gray-300 line-clamp-3 mb-3">{{ review.content }}</p>
+                    {% if review.contains_spoilers %}
+                    <span class="inline-block px-3 py-1 bg-red-900 text-red-200 text-sm rounded-full mb-3">
+                        ⚠️ Contains Spoilers
+                    </span>
+                    {% endif %}
+                    <a href="{{ review.get_absolute_url }}" class="text-red-600 hover:text-red-700 text-sm">
+                        Read Full Review →
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+    </div>
+</div>
+
+<script src="{% static 'js/watchlist.js' %}"></script>
+{% endblock %}

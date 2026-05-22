@@ -1,0 +1,35 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ genre.name }} - RateMyShow{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-4xl font-bold mb-8">{{ genre.name }} Movies & Shows</h1>
+
+    {% if genre.description %}
+    <p class="text-gray-300 mb-8 text-lg">{{ genre.description }}</p>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        {% for title in titles %}
+        <a href="{{ title.get_absolute_url }}" class="group">
+            <div class="relative overflow-hidden rounded-lg mb-2">
+                {% if title.poster_url %}
+                <img src="{{ title.poster_url }}" alt="{{ title.title }}"
+                    class="w-full h-72 object-cover group-hover:scale-110 transition duration-300">
+                {% else %}
+                <div class="w-full h-72 bg-gray-800 flex items-center justify-center">
+                    <i class="fas fa-film text-4xl text-gray-600"></i>
+                </div>
+                {% endif %}
+            </div>
+            <h2 class="font-bold line-clamp-2 mb-2">{{ title.title }}</h2>
+            <div class="flex items-center gap-1">
+                <i class="fas fa-star text-yellow-400"></i>
+                <span>{{ title.avg_rating|floatformat:1 }}/10</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

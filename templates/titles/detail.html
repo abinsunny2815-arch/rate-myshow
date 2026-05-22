@@ -1,0 +1,327 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}{{ title.title }} - RateMyShow{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <!-- Poster and Quick Info -->
+        <div class="lg:col-span-1">
+            <div class="sticky top-20">
+                {% if title.poster_url %}
+                <img src="{{ title.poster_url }}" alt="{{ title.title }}" class="w-full rounded-lg shadow-lg mb-4">
+                {% else %}
+                <div class="w-full h-96 bg-gray-800 rounded-lg flex items-center justify-center mb-4">
+                    <i class="fas fa-film text-6xl text-gray-600"></i>
+                </div>
+                {% endif %}
+
+                <div class="bg-gray-800 p-4 rounded-lg space-y-3">
+                    <div>
+                        <span class="text-gray-400 text-sm">IMDB Rating</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl font-bold">{{ title.imdb_rating }}</span>
+                            <span class="text-gray-400">/10</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <span class="text-gray-400 text-sm">OUR RATING</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl font-bold">{{ avg_rating|floatformat:1 }}</span>
+                            <span class="text-gray-400">/ 10</span>
+                            <span class="text-gray-400 text-sm">({{ total_ratings }} ratings)</span>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-700 pt-3">
+                        <span class="text-gray-400 text-sm block mb-2">Type</span>
+                        <span class="inline-block px-3 py-1 bg-red-600 rounded">{{
+                            title.get_type_display|default:title.type|upper }}</span>
+                    </div>
+
+                    {% if title.year %}
+                    <div>
+                        <span class="text-gray-400 text-sm">Year</span>
+                        <p>{{ title.year }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if title.runtime %}
+                    <div>
+                        <span class="text-gray-400 text-sm">Runtime</span>
+                        <p>{{ title.runtime }} min</p>
+                    </div>
+                    {% endif %}
+
+                    {% if title.rated %}
+                    <div>
+                        <span class="text-gray-400 text-sm">Rating</span>
+                        <p>{{ title.rated }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Action Buttons -->
+                {% if user.is_authenticated %}
+                <div class="mt-4 space-y-2">
+                    <button class="w-full px-4 py-2 bg-red-600 rounded-lg hover:bg-red-700 transition font-bold"
+                        onclick="showRatingModal()">
+                        <i class="fas fa-star mr-2"></i> Rate This
+                    </button>
+
+                    <button
+                        class="w-full px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition font-bold"
+                        onclick="addToWatchlist('{{ title.omdb_id }}')">
+                        <i class="fas fa-bookmark mr-2"></i>
+                        {% if in_watchlist %}
+                        Remove from Watchlist
+                        {% else %}
+                        Add to Watchlist
+                        {% endif %}
+                    </button>
+
+                    <a href="{% url 'ratings:review_create' title.omdb_id %}"
+                        class="block text-center px-4 py-2 border border-gray-600 text-gray-200 rounded-lg hover:bg-gray-700 transition">
+                        <i class="fas fa-pencil mr-2"></i> Write Review
+                    </a>
+                </div>
+                {% else %}
+                <p class="text-gray-400 text-sm mt-4"><a href="{% url 'users:login' %}"
+                        class="text-red-600 hover:text-red-700">Login</a> to rate and review.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="lg:col-span-3">
+            <!-- Title and Meta -->
+            <div class="mb-8">
+                <h1 class="text-5xl font-bold mb-2">{{ title.title }}</h1>
+                <div class="flex flex-wrap gap-4 text-gray-400">
+                    {% if title.year %}<span>{{ title.year }}</span>{% endif %}
+                    {% if title.runtime %}<span>{{ title.runtime }} min</span>{% endif %}
+                    {% if title.language %}<span>{{ title.language }}</span>{% endif %}
+                </div>
+            </div>
+
+            <!-- Genres -->
+            {% if title.genres.all %}
+            <div class="mb-8">
+                <h3 class="font-bold text-lg mb-2">Genres</h3>
+                <div class="flex flex-wrap gap-2">
+                    {% for genre in title.genres.all %}
+                    <a href="{% url 'core:genre_detail' genre.slug %}"
+                        class="px-4 py-2 bg-gray-800 rounded-lg hover:bg-red-600 transition">
+                        {{ genre.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Plot -->
+            {% if title.plot %}
+            <div class="mb-8">
+                <h3 class="font-bold text-lg mb-2">Plot</h3>
+                <p class="text-gray-300 leading-relaxed">{{ title.plot }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Credits -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {% if title.director %}
+                <div>
+                    <h4 class="font-bold text-gray-400 text-sm mb-2">DIRECTOR</h4>
+                    <p>{{ title.director }}</p>
+                </div>
+                {% endif %}
+                {% if title.writer %}
+                <div>
+                    <h4 class="font-bold text-gray-400 text-sm mb-2">WRITERS</h4>
+                    <p>{{ title.writer }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Cast -->
+            {% if title.actors.all %}
+            <div class="mb-8">
+                <h3 class="font-bold text-lg mb-4">Cast</h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {% for actor in title.actors.all|slice:":9" %}
+                    <div class="text-sm">
+                        <p class="font-bold">{{ actor.name }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Rating Distribution -->
+            <div class="mb-8">
+                <h3 class="font-bold text-lg mb-4">Rating Distribution</h3>
+                <div class="space-y-2">
+                    {% for score in "10 9 8 7 6 5 4 3 2 1"|split %}
+                    <div class="flex items-center gap-2">
+                        <span class="w-8 text-sm">{{ score }}</span>
+                        <div class="flex-1 h-6 bg-gray-800 rounded-full overflow-hidden">
+                            <div class="h-full bg-red-600 transition-all" style="width: {% widthratio 50 100 100 %}%;">
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Reviews -->
+            <div class="mb-8">
+                <h3 class="font-bold text-2xl mb-4">
+                    <i class="fas fa-comments mr-2"></i> Reviews ({{ reviews.count }})
+                </h3>
+
+                {% if reviews %}
+                <div class="space-y-4">
+                    {% for review in reviews %}
+                    <div class="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <a href="{% url 'core:user_profile' review.user.username %}"
+                                    class="font-bold hover:text-red-600">
+                                    {{ review.user.display_name }}
+                                </a>
+                                {% if review.rating %}
+                                <div class="flex gap-1 mt-1">
+                                    {% for i in "12345678910"|slice:":10" %}
+                                    {% if i|add:"0" <= review.rating %} <i class="fas fa-star text-yellow-400"></i>
+                                        {% else %}
+                                        <i class="far fa-star text-gray-600"></i>
+                                        {% endif %}
+                                        {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <span class="text-gray-400 text-sm">{{ review.created_at|timesince }} ago</span>
+                        </div>
+
+                        {% if review.title_review %}
+                        <h4 class="font-bold mb-2">{{ review.title_review }}</h4>
+                        {% endif %}
+
+                        {% if review.contains_spoilers %}
+                        <div class="text-red-400 text-sm mb-2">⚠️ This review contains spoilers</div>
+                        {% endif %}
+
+                        <p class="text-gray-300 mb-3">{{ review.content|truncatewords:50 }}</p>
+
+                        <div class="flex gap-4 text-sm text-gray-400">
+                            <a href="{% url 'ratings:mark_helpful' review.id %}" class="hover:text-green-600">
+                                <i class="fas fa-thumbs-up mr-1"></i> Helpful ({{ review.helpful_count }})
+                            </a>
+                            <a href="{% url 'ratings:mark_unhelpful' review.id %}" class="hover:text-red-600">
+                                <i class="fas fa-thumbs-down mr-1"></i> Not Helpful ({{ review.unhelpful_count }})
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-400">No reviews yet. <a href="{% url 'ratings:review_create' title.omdb_id %}"
+                        class="text-red-600">Be the first to review!</a></p>
+                {% endif %}
+            </div>
+
+            <!-- Similar Titles -->
+            {% if similar_titles %}
+            <div class="mb-8">
+                <h3 class="font-bold text-2xl mb-4">Similar Titles</h3>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {% for similar in similar_titles|slice:":8" %}
+                    <a href="{{ similar.get_absolute_url }}" class="group">
+                        <div class="relative overflow-hidden rounded-lg">
+                            {% if similar.poster_url %}
+                            <img src="{{ similar.poster_url }}" alt="{{ similar.title }}"
+                                class="w-full h-48 object-cover group-hover:scale-110 transition">
+                            {% else %}
+                            <div class="w-full h-48 bg-gray-800 flex items-center justify-center">
+                                <i class="fas fa-film text-2xl text-gray-600"></i>
+                            </div>
+                            {% endif %}
+                            <div
+                                class="absolute inset-0 bg-gradient-to-t from-black opacity-0 group-hover:opacity-100 transition">
+                                <div class="absolute bottom-2 left-2 right-2">
+                                    <p class="font-bold text-sm line-clamp-2">{{ similar.title }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Rating Modal -->
+{% if user.is_authenticated %}
+<div id="ratingModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="bg-gray-800 p-6 rounded-lg max-w-md w-full">
+        <h2 class="text-2xl font-bold mb-4">Rate "{{ title.title }}"</h2>
+
+        <div class="mb-6">
+            <div class="flex gap-2 justify-center mb-4" id="starRating">
+                {% for i in "12345678910"|slice:":10" %}
+                <button class="text-4xl text-gray-600 hover:text-yellow-400 transition" onclick="setRating({{ i }})">
+                    <i class="far fa-star"></i>
+                </button>
+                {% endfor %}
+            </div>
+            <p class="text-center text-gray-400">Click to rate</p>
+        </div>
+
+        <form method="post" action="{% url 'titles:rate' title.omdb_id %}" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" id="scoreInput" name="score" value="">
+            <div class="flex gap-2">
+                <button type="submit" class="flex-1 px-4 py-2 bg-red-600 rounded-lg hover:bg-red-700 transition">
+                    Submit Rating
+                </button>
+                <button type="button" onclick="closeRatingModal()"
+                    class="flex-1 px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<script>
+    function showRatingModal() {
+        document.getElementById('ratingModal').classList.remove('hidden');
+    }
+
+    function closeRatingModal() {
+        document.getElementById('ratingModal').classList.add('hidden');
+    }
+
+    function setRating(score) {
+        document.getElementById('scoreInput').value = score;
+        const stars = document.querySelectorAll('#starRating button i');
+        stars.forEach((star, index) => {
+            if (index < score) {
+                star.classList.remove('far');
+                star.classList.add('fas');
+                star.classList.add('text-yellow-400');
+            } else {
+                star.classList.add('far');
+                star.classList.remove('fas');
+                star.classList.remove('text-yellow-400');
+                star.classList.add('text-gray-600');
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Recommendations - RateMyShow{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-4xl font-bold mb-8">💡 Recommended For You</h1>
+
+    {% if recommendations %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        {% for rec in recommendations %}
+        <div class="group">
+            <a href="{{ rec.title.get_absolute_url }}">
+                <div class="relative overflow-hidden rounded-lg mb-2">
+                    {% if rec.title.poster_url %}
+                    <img src="{{ rec.title.poster_url }}" alt="{{ rec.title.title }}"
+                        class="w-full h-72 object-cover group-hover:scale-110 transition duration-300">
+                    {% else %}
+                    <div class="w-full h-72 bg-gray-800 flex items-center justify-center">
+                        <i class="fas fa-film text-4xl text-gray-600"></i>
+                    </div>
+                    {% endif %}
+
+                    <!-- Confidence Badge -->
+                    <div class="absolute top-2 right-2 bg-red-600 px-3 py-1 rounded-full text-sm font-bold">
+                        {{ rec.confidence_score|floatformat:0 }}%
+                    </div>
+                </div>
+            </a>
+
+            <div>
+                <a href="{{ rec.title.get_absolute_url }}" class="font-bold hover:text-red-600 line-clamp-2 block mb-1">
+                    {{ rec.title.title }}
+                </a>
+                <p class="text-sm text-gray-400 mb-2">{{ rec.get_reason_display }}</p>
+                <div class="flex items-center gap-1">
+                    <i class="fas fa-star text-yellow-400"></i>
+                    <span class="text-sm">{{ rec.title.avg_rating|floatformat:1 }}/10</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="mt-12 flex justify-center gap-2">
+        {% if page_obj.has_previous %}
+        <a href="?page=1" class="px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700">First</a>
+        <a href="?page={{ page_obj.previous_page_number }}"
+            class="px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700">Previous</a>
+        {% endif %}
+
+        <span class="px-4 py-2">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}"
+            class="px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700">Next</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}"
+            class="px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700">Last</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="text-center py-16">
+        <i class="fas fa-lightbulb text-6xl text-gray-600 mb-4"></i>
+        <p class="text-gray-400 text-xl">Rate more movies to get personalized recommendations</p>
+        <a href="{% url 'core:home' %}"
+            class="mt-4 inline-block px-6 py-2 bg-red-600 rounded-lg hover:bg-red-700 transition">
+            Explore Titles
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

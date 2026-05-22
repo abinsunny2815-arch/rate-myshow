@@ -1,0 +1,88 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}My Ratings - RateMyShow{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-4xl font-bold">⭐ My Ratings</h1>
+        <div class="flex gap-2">
+            <a href="?sort=-created_at"
+                class="px-4 py-2 rounded-lg {% if 'created_at' in request.GET.sort|default:'-created_at' %}bg-red-600{% else %}bg-gray-800 hover:bg-gray-700{% endif %}">
+                Newest
+            </a>
+            <a href="?sort=-score"
+                class="px-4 py-2 rounded-lg {% if 'score' in request.GET.sort|default:'-created_at' %}bg-red-600{% else %}bg-gray-800 hover:bg-gray-700{% endif %}">
+                Highest
+            </a>
+        </div>
+    </div>
+
+    {% if ratings %}
+    <div class="bg-gray-800 p-4 rounded-lg mb-6 border border-gray-700">
+        <p class="text-gray-300">
+            Total Ratings: <span class="font-bold">{{ total_ratings }}</span>
+            {% if avg_rating %}
+            | Average: <span class="font-bold">{{ avg_rating|floatformat:1 }}/10</span>
+            {% endif %}
+        </p>
+    </div>
+
+    <div class="space-y-4">
+        {% for rating in ratings %}
+        <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 hover:border-red-600 transition">
+            <div class="flex justify-between items-start mb-2">
+                <a href="{{ rating.title.get_absolute_url }}" class="font-bold text-lg hover:text-red-600">
+                    {{ rating.title.title }}
+                </a>
+                <span class="text-gray-400 text-sm">{{ rating.created_at|date:"M d, Y" }}</span>
+            </div>
+
+            <div class="flex items-center gap-1 mb-2">
+                {% for i in "12345678910"|slice:":10" %}
+                {% if i|add:"0" <= rating.score %} <i class="fas fa-star text-yellow-400"></i>
+                    {% else %}
+                    <i class="far fa-star text-gray-600"></i>
+                    {% endif %}
+                    {% endfor %}
+                    <span class="ml-2 font-bold">{{ rating.score }}/10</span>
+            </div>
+
+            <a href="{{ rating.title.get_absolute_url }}" class="text-red-600 hover:text-red-700 text-sm">
+                View Title →
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="mt-12 flex justify-center gap-2">
+        {% if page_obj.has_previous %}
+        <a href="?page=1" class="px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700">First</a>
+        <a href="?page={{ page_obj.previous_page_number }}"
+            class="px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700">Previous</a>
+        {% endif %}
+
+        <span class="px-4 py-2">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}"
+            class="px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700">Next</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}"
+            class="px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700">Last</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="text-center py-16">
+        <i class="fas fa-star text-6xl text-gray-600 mb-4"></i>
+        <p class="text-gray-400 text-xl">You haven't rated anything yet</p>
+        <a href="{% url 'core:home' %}"
+            class="mt-4 inline-block px-6 py-2 bg-red-600 rounded-lg hover:bg-red-700 transition">
+            Start Rating
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

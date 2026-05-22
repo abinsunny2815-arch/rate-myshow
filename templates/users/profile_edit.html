@@ -1,0 +1,78 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Edit Profile - RateMyShow{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-4xl font-bold mb-8">Edit Profile</h1>
+
+    <div class="bg-gray-800 p-8 rounded-lg border border-gray-700">
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+
+            <div>
+                <label class="block text-sm font-bold mb-2">First Name</label>
+                {{ form.first_name }}
+                {% if form.first_name.errors %}
+                <div class="text-red-400 text-sm mt-1">{{ form.first_name.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold mb-2">Last Name</label>
+                {{ form.last_name }}
+                {% if form.last_name.errors %}
+                <div class="text-red-400 text-sm mt-1">{{ form.last_name.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold mb-2">Email</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                <div class="text-red-400 text-sm mt-1">{{ form.email.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold mb-2">Bio</label>
+                {{ form.bio }}
+                {% if form.bio.errors %}
+                <div class="text-red-400 text-sm mt-1">{{ form.bio.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold mb-2">Avatar</label>
+                {{ form.avatar }}
+                {% if form.avatar.errors %}
+                <div class="text-red-400 text-sm mt-1">{{ form.avatar.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold mb-2">Theme Preference</label>
+                {{ form.theme_preference }}
+                {% if form.theme_preference.errors %}
+                <div class="text-red-400 text-sm mt-1">{{ form.theme_preference.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="flex items-center gap-2">
+                {{ form.is_public }}
+                <label for="id_is_public" class="text-sm">Make my profile public</label>
+            </div>
+
+            <div class="flex gap-4">
+                <button type="submit" class="px-6 py-2 bg-red-600 rounded-lg hover:bg-red-700 transition font-bold">
+                    Save Changes
+                </button>
+                <a href="{% url 'users:profile' %}"
+                    class="px-6 py-2 border border-gray-600 rounded-lg hover:bg-gray-700 transition">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

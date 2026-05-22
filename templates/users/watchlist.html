@@ -1,0 +1,91 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Watchlist - RateMyShow{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-4xl font-bold mb-8">My Watchlist</h1>
+
+    <!-- Filter Buttons -->
+    <div class="mb-8 flex flex-wrap gap-2">
+        <a href="?status=to-watch"
+            class="px-4 py-2 rounded-lg transition {% if current_status == 'to-watch' %}bg-red-600{% else %}bg-gray-800 hover:bg-gray-700{% endif %}">
+            To Watch
+        </a>
+        <a href="?status=watching"
+            class="px-4 py-2 rounded-lg transition {% if current_status == 'watching' %}bg-red-600{% else %}bg-gray-800 hover:bg-gray-700{% endif %}">
+            Watching
+        </a>
+        <a href="?status=completed"
+            class="px-4 py-2 rounded-lg transition {% if current_status == 'completed' %}bg-red-600{% else %}bg-gray-800 hover:bg-gray-700{% endif %}">
+            Completed
+        </a>
+        <a href="?status=dropped"
+            class="px-4 py-2 rounded-lg transition {% if current_status == 'dropped' %}bg-red-600{% else %}bg-gray-800 hover:bg-gray-700{% endif %}">
+            Dropped
+        </a>
+    </div>
+
+    <!-- Watchlist Items -->
+    {% if watchlist_items %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        {% for item in watchlist_items %}
+        <div class="group relative">
+            <a href="{{ item.title.get_absolute_url }}">
+                <div class="relative overflow-hidden rounded-lg mb-2">
+                    {% if item.title.poster_url %}
+                    <img src="{{ item.title.poster_url }}" alt="{{ item.title.title }}"
+                        class="w-full h-72 object-cover group-hover:scale-110 transition duration-300">
+                    {% else %}
+                    <div class="w-full h-72 bg-gray-800 flex items-center justify-center">
+                        <i class="fas fa-film text-4xl text-gray-600"></i>
+                    </div>
+                    {% endif %}
+                </div>
+            </a>
+            <div>
+                <a href="{{ item.title.get_absolute_url }}" class="font-bold hover:text-red-600 line-clamp-2">
+                    {{ item.title.title }}
+                </a>
+                <p class="text-sm text-gray-400">{{ item.get_status_display }}</p>
+                <div class="flex items-center gap-1 mt-2">
+                    <i class="fas fa-star text-yellow-400"></i>
+                    <span class="text-sm">{{ item.title.avg_rating|floatformat:1 }}/10</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="mt-12 flex justify-center gap-2">
+        {% if page_obj.has_previous %}
+        <a href="?page=1&status={{ current_status }}"
+            class="px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700">First</a>
+        <a href="?page={{ page_obj.previous_page_number }}&status={{ current_status }}"
+            class="px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700">Previous</a>
+        {% endif %}
+
+        <span class="px-4 py-2">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&status={{ current_status }}"
+            class="px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700">Next</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}&status={{ current_status }}"
+            class="px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700">Last</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="text-center py-16">
+        <i class="fas fa-bookmark text-6xl text-gray-600 mb-4"></i>
+        <p class="text-gray-400 text-xl">Your watchlist is empty</p>
+        <a href="{% url 'core:home' %}"
+            class="mt-4 inline-block px-6 py-2 bg-red-600 rounded-lg hover:bg-red-700 transition">
+            Find Shows to Watch
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

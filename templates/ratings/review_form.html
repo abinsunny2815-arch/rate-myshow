@@ -1,0 +1,57 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Write Review - RateMyShow{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h1 class="text-4xl font-bold mb-2">Write a Review</h1>
+    <p class="text-gray-400 mb-8">Review of <a href="{{ title.get_absolute_url }}"
+            class="text-red-600 hover:text-red-700">{{ title.title }}</a></p>
+
+    <div class="bg-gray-800 p-8 rounded-lg border border-gray-700">
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="bg-red-900/30 border border-red-700 text-red-100 p-4 rounded-lg">
+                {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div>
+                <label class="block text-sm font-bold mb-2">Review Title (Optional)</label>
+                {{ form.title_review }}
+                {% if form.title_review.errors %}
+                <div class="text-red-400 text-sm mt-1">{{ form.title_review.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold mb-2">Your Review</label>
+                {{ form.content }}
+                {% if form.content.errors %}
+                <div class="text-red-400 text-sm mt-1">{{ form.content.errors.0 }}</div>
+                {% endif %}
+                <p class="text-gray-400 text-sm mt-2">Be thoughtful and constructive. Avoid spoilers if possible!</p>
+            </div>
+
+            <div class="flex items-center gap-2">
+                {{ form.contains_spoilers }}
+                <label for="id_contains_spoilers" class="text-sm">This review contains major spoilers</label>
+            </div>
+
+            <div class="flex gap-4">
+                <button type="submit" class="px-6 py-2 bg-red-600 rounded-lg hover:bg-red-700 transition font-bold">
+                    <i class="fas fa-paper-plane mr-2"></i> Publish Review
+                </button>
+                <a href="{{ title.get_absolute_url }}"
+                    class="px-6 py-2 border border-gray-600 rounded-lg hover:bg-gray-700 transition">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
