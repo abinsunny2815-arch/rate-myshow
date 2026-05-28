@@ -25,8 +25,8 @@ class HomeView(TemplateView):
         trending = Title.objects.filter(
             ratings__created_at__gte=week_ago
         ).annotate(
-            rating_count=Count('ratings')
-        ).order_by('-rating_count')[:10]
+            ratings_count=Count('ratings')
+        ).order_by('-ratings_count')[:10]
         
         context['trending'] = trending
         

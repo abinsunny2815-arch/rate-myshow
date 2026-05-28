@@ -2,7 +2,6 @@
 Models for recommendations app.
 """
 from django.db import models
-from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 
@@ -53,9 +52,9 @@ class SimilarTitle(models.Model):
     """Cache similar titles for quick retrieval."""
     title = models.OneToOneField('titles.Title', on_delete=models.CASCADE, related_name='similar_titles_cache')
     
-    # Store IDs of similar titles (max 20)
-    similar_omdb_ids = ArrayField(models.CharField(max_length=20), size=20, default=list)
-    similarity_scores = ArrayField(models.FloatField(), size=20, default=list)
+    # Store IDs and scores of similar titles in JSON for SQLite compatibility
+    similar_omdb_ids = models.JSONField(default=list, blank=True)
+    similarity_scores = models.JSONField(default=list, blank=True)
     
     updated_at = models.DateTimeField(auto_now=True)
     

@@ -186,8 +186,8 @@ class TrendingService:
         trending = Title.objects.filter(
             ratings__created_at__gte=week_ago
         ).annotate(
-            rating_count=models.Count('ratings')
-        ).order_by('-rating_count')[:50]
+            ratings_count=models.Count('ratings')
+        ).order_by('-ratings_count')[:50]
         
         cache.set(cache_key, list(trending), 3600)  # Cache for 1 hour
         return trending
