@@ -1,0 +1,137 @@
+{% extends "layouts/base.html" %}
+{% load static custom_filters %}
+
+{% block title %}My Watched Movies - RateMyShow{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-4xl font-bold mb-2">✅ Watched Movies</h1>
+        <p class="text-gray-400">{{ total_count }} movie{{ total_count|pluralize }}</p>
+    </div>
+
+    <!-- Empty State -->
+    {% if not watched_items %}
+    <div class="flex flex-col items-center justify-center py-20">
+        <i class="fas fa-check-circle text-6xl text-gray-600 mb-4"></i>
+        <h3 class="text-2xl font-semibold text-gray-300 mb-2">No watched movies yet</h3>
+        <p class="text-gray-400 mb-6">Mark movies as watched to see them here!</p>
+        <a href="{% url 'titles:my_watchlist' %}" class="px-6 py-3 bg-red-600 rounded-lg hover:bg-red-700 transition font-bold">
+            Go to Watchlist
+        </a>
+    </div>
+    {% else %}
+
+    <!-- Watched Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 mb-8">
+        {% for item in watched_items %}
+        <div class="group relative">
+            <!-- Movie Card -->
+            <a href="{{ item.title.get_absolute_url }}" class="block relative overflow-hidden rounded-lg bg-gray-800 hover:shadow-xl transition-all duration-300">
+                {% if item.title.poster_url %}
+                <img src="{{ item.title.poster_url }}" alt="{{ item.title.title }}"
+                    class="w-full h-80 object-cover group-hover:scale-110 transition duration-300">
+                {% else %}
+                <div class="w-full h-80 bg-gray-700 flex items-center justify-center">
+                    <i class="fas fa-film text-4xl text-gray-600"></i>
+                </div>
+                {% endif %}
+                
+                <!-- Rating Badge -->
+                {% if rating_dict|get_item:item.title_id %}
+                <div class="absolute top-2 left-2 bg-yellow-500 px-2 py-1 rounded-full text-xs font-bold text-black">
+                    ⭐ {{ rating_dict|get_item:item.title_id }}/10
+                </div>
+                {% endif %}
+                
+                <!-- Overlay -->
+                <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition">
+                    <div class="absolute bottom-0 left-0 right-0 p-4">
+                        <h3 class="font-bold text-white line-clamp-2">{{ item.title.title }}</h3>
+                        <p class="text-sm text-gray-300">{{ item.title.year }}</p>
+                        {% if item.watched_at %}
+                        <p class="text-xs text-gray-400 mt-2">Watched: {{ item.watched_at|date:"M d, Y" }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+
+            <!-- Action Buttons -->
+            <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-3 bg-black/50">
+                <a href="{{ item.title.get_absolute_url }}" 
+                    class="p-3 bg-blue-600 rounded-full hover:bg-blue-700 transition" title="View Details">
+                    <i class="fas fa-eye text-white"></i>
+                </a>
+                <button onclick="removeFromWatched('{{ item.title.omdb_id }}')" 
+                    class="p-3 bg-red-600 rounded-full hover:bg-red-700 transition" title="Remove">
+                    <i class="fas fa-trash text-white"></i>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <nav class="flex justify-center mt-8">
+        <div class="flex gap-2">
+            {% if page_obj.has_previous %}
+            <a href="?page=1" class="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600 transition">First</a>
+            <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600 transition">Previous</a>
+            {% endif %}
+
+            <span class="px-4 py-2">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600 transition">Next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}" class="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600 transition">Last</a>
+            {% endif %}
+        </div>
+    </nav>
+    {% endif %}
+
+    {% endif %}
+
+    <!-- Links -->
+    <div class="mt-12 flex gap-4">
+        <a href="{% url 'titles:my_watchlist' %}" class="px-6 py-3 bg-red-600 rounded-lg hover:bg-red-700 transition font-bold">
+            <i class="fas fa-bookmark mr-2"></i>My Watchlist
+        </a>
+        <a href="{% url 'core:top_movies' %}" class="px-6 py-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition font-bold">
+            <i class="fas fa-arrow-left mr-2"></i>Back to Movies
+        </a>
+    </div>
+</div>
+
+<script>
+async function removeFromWatched(omdbId) {
+    if (!confirm('Are you sure you want to remove this movie from watched?')) return;
+    
+    try {
+        const response = await fetch(`/titles/${omdbId}/watchlist/remove/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        });
+        const data = await response.json();
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred');
+    }
+}
+</script>
+
+<!-- Custom filter for dict access in templates -->
+<script type="text/javascript">
+// Store rating dict in window for script access
+window.ratingDict = {{ rating_dict|safe }};
+</script>
+
+{% endblock %}

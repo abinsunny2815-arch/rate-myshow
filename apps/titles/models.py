@@ -72,7 +72,7 @@ class Title(models.Model):
         return f"{self.title}{year_str}"
     
     def get_absolute_url(self):
-        return reverse('title_detail', kwargs={'omdb_id': self.omdb_id})
+        return reverse('titles:detail', kwargs={'omdb_id': self.omdb_id})
     
     @property
     def is_movie(self):
@@ -105,7 +105,7 @@ class Genre(models.Model):
         return self.name
     
     def get_absolute_url(self):
-        return reverse('genre_list', kwargs={'slug': self.slug})
+        return reverse('core:genre_detail', kwargs={'slug': self.slug})
 
 
 class Actor(models.Model):
@@ -139,11 +139,11 @@ class Person(models.Model):
 
 
 class Watchlist(models.Model):
-    """User watchlist for titles."""
+    """User watchlist and watched tracking for titles."""
     STATUS_CHOICES = [
         ('to-watch', 'To Watch'),
         ('watching', 'Watching'),
-        ('completed', 'Completed'),
+        ('watched', 'Watched'),
         ('dropped', 'Dropped'),
     ]
     
@@ -155,6 +155,7 @@ class Watchlist(models.Model):
     
     added_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    watched_at = models.DateTimeField(null=True, blank=True, help_text="When marked as watched")
     
     class Meta:
         unique_together = ('user', 'title')
@@ -162,7 +163,19 @@ class Watchlist(models.Model):
         indexes = [
             models.Index(fields=['user', 'status']),
             models.Index(fields=['user', '-added_at']),
+            models.Index(fields=['status']),
         ]
     
     def __str__(self):
         return f"{self.user.username} - {self.title.title} ({self.status})"
+    
+    def mark_as_watched(self):
+        """Mark as watched and set timestamp."""
+        from django.utils import timezone
+        self.status = 'watched'
+        self.watched_at = timezone.now()
+        self.save(update_fields=['status', 'watched_at'])
+    
+    @property
+    def is_watched(self):
+        return self.status == 'watched'

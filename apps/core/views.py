@@ -1,6 +1,7 @@
 """
 Views for core app.
 """
+import logging
 from django.shortcuts import render, redirect
 from django.views.generic import TemplateView, ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -12,6 +13,8 @@ from apps.titles.models import Title, Genre
 from apps.ratings.models import Rating, Review
 from apps.recommendations.models import Recommendation
 
+logger = logging.getLogger(__name__)
+
 
 class HomeView(TemplateView):
     """Home page with trending and personalized content."""
@@ -20,7 +23,7 @@ class HomeView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Trending this week
+        # Trending this week (fall back to top IMDB rated if no user ratings)
         week_ago = timezone.now() - timedelta(days=7)
         trending = Title.objects.filter(
             ratings__created_at__gte=week_ago
@@ -28,22 +31,44 @@ class HomeView(TemplateView):
             ratings_count=Count('ratings')
         ).order_by('-ratings_count')[:10]
         
+        # If no trending, show top IMDB rated
+        if not trending:
+            trending = Title.objects.all().order_by('-imdb_rating', '-imdb_votes')[:10]
+        
         context['trending'] = trending
         
-        # Popular movies
-        context['popular_movies'] = Title.objects.filter(
-            type='movie',
-            rating_count__gt=10
-        ).order_by('-avg_rating', '-rating_count')[:10]
+        # Popular movies (show all movies sorted by IMDB rating if no user ratings)
+        popular_movies = Title.objects.filter(type='movie', rating_count__gt=10).order_by('-avg_rating', '-rating_count')[:10]
+        if not popular_movies:
+            popular_movies = Title.objects.filter(type='movie').order_by('-imdb_rating', '-imdb_votes')[:10]
+        context['popular_movies'] = popular_movies
         
-        # Top TV shows
-        context['top_tv_shows'] = Title.objects.filter(
-            type='series',
-            rating_count__gt=5
-        ).order_by('-avg_rating', '-rating_count')[:10]
+        # Top TV shows (show all shows sorted by IMDB rating if no user ratings)
+        top_tv_shows = Title.objects.filter(type='series', rating_count__gt=5).order_by('-avg_rating', '-rating_count')[:10]
+        if not top_tv_shows:
+            top_tv_shows = Title.objects.filter(type='series').order_by('-imdb_rating', '-imdb_votes')[:10]
+        context['top_tv_shows'] = top_tv_shows
         
-        # Recommendations for logged-in users
+        # User's recently watched (authenticated users only)
         if self.request.user.is_authenticated:
+            from apps.titles.models import Watchlist
+            from apps.ratings.models import Rating
+            
+            watched = Watchlist.objects.filter(
+                user=self.request.user,
+                status='watched'
+            ).select_related('title').order_by('-watched_at')[:8]
+            context['user_watched'] = watched
+            
+            # Get ratings for watched movies
+            watched_ids = [item.title_id for item in watched]
+            ratings = Rating.objects.filter(
+                user=self.request.user,
+                title_id__in=watched_ids
+            ).values('title_id', 'score')
+            context['user_ratings'] = {r['title_id']: r['score'] for r in ratings}
+            
+            # Recommendations for logged-in users
             context['recommendations'] = Recommendation.objects.filter(
                 user=self.request.user,
                 is_dismissed=False
@@ -66,9 +91,37 @@ class SearchView(TemplateView):
         query = self.request.GET.get('q', '').strip()
         
         if query:
-            context['results'] = Title.objects.filter(
+            # First, search local database
+            results = Title.objects.filter(
                 Q(title__icontains=query) | Q(plot__icontains=query)
             ).order_by('-avg_rating', '-rating_count')[:50]
+            
+            # If no local results, search OMDB API
+            if not results:
+                from apps.core.services import OMDBService
+                service = OMDBService()
+                omdb_results = service.search(query)
+                
+                if omdb_results and 'Search' in omdb_results:
+                    # Try to load titles from OMDB search results
+                    for item in omdb_results['Search'][:10]:
+                        try:
+                            title = service.sync_title_to_db(item['imdbID'])
+                            if title:
+                                results = list(results) + [title]
+                        except Exception as e:
+                            logger.warning(f"Failed to load {item['imdbID']}: {e}")
+                    
+                    # Remove duplicates and sort
+                    seen = set()
+                    unique_results = []
+                    for title in results:
+                        if title.id not in seen:
+                            seen.add(title.id)
+                            unique_results.append(title)
+                    results = unique_results[:50]
+            
+            context['results'] = results
             context['query'] = query
         
         return context
@@ -83,9 +136,8 @@ class TopMoviesView(ListView):
     
     def get_queryset(self):
         return Title.objects.filter(
-            type='movie',
-            rating_count__gt=0
-        ).order_by('-avg_rating', '-rating_count')
+            type='movie'
+        ).order_by('-imdb_rating', '-imdb_votes')
 
 
 class TopTVShowsView(ListView):
@@ -97,9 +149,8 @@ class TopTVShowsView(ListView):
     
     def get_queryset(self):
         return Title.objects.filter(
-            type='series',
-            rating_count__gt=0
-        ).order_by('-avg_rating', '-rating_count')
+            type='series'
+        ).order_by('-imdb_rating', '-imdb_votes')
 
 
 class GenreListView(ListView):

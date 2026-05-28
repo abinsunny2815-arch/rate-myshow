@@ -91,6 +91,54 @@ class SearchAjaxView(DetailView):
         return JsonResponse({'results': list(results)})
 
 
+class UserWatchlistView(LoginRequiredMixin, ListView):
+    """Display user's to-watch watchlist."""
+    template_name = 'titles/watchlist.html'
+    context_object_name = 'watchlist_items'
+    paginate_by = 24
+    
+    def get_queryset(self):
+        return Watchlist.objects.filter(
+            user=self.request.user,
+            status='to-watch'
+        ).select_related('title').order_by('-priority', '-added_at')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'My Watchlist'
+        context['total_count'] = self.get_queryset().count()
+        return context
+
+
+class UserWatchedView(LoginRequiredMixin, ListView):
+    """Display user's watched movies."""
+    template_name = 'titles/watched.html'
+    context_object_name = 'watched_items'
+    paginate_by = 24
+    
+    def get_queryset(self):
+        return Watchlist.objects.filter(
+            user=self.request.user,
+            status='watched'
+        ).select_related('title').order_by('-watched_at', '-added_at')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'My Watched Movies'
+        context['total_count'] = self.get_queryset().count()
+        
+        # Get ratings for watched items
+        watched_ids = [item.title_id for item in self.get_queryset()]
+        ratings = Rating.objects.filter(
+            user=self.request.user,
+            title_id__in=watched_ids
+        ).values('title_id', 'score')
+        rating_dict = {r['title_id']: r['score'] for r in ratings}
+        context['rating_dict'] = rating_dict
+        
+        return context
+
+
 @login_required
 @require_POST
 def add_rating(request, omdb_id):
@@ -134,6 +182,9 @@ def add_watchlist(request, omdb_id):
     title = get_object_or_404(Title, omdb_id=omdb_id)
     status = request.POST.get('status', 'to-watch')
     
+    if status not in dict(Watchlist.STATUS_CHOICES):
+        return JsonResponse({'error': 'Invalid status'}, status=400)
+    
     watchlist, created = Watchlist.objects.update_or_create(
         user=request.user,
         title=title,
@@ -145,7 +196,30 @@ def add_watchlist(request, omdb_id):
     return JsonResponse({
         'success': True,
         'created': created,
-        'status': status
+        'status': status,
+        'is_watched': watchlist.is_watched
+    })
+
+
+@login_required
+@require_POST
+def mark_as_watched(request, omdb_id):
+    """Mark a title as watched."""
+    title = get_object_or_404(Title, omdb_id=omdb_id)
+    
+    # Get or create watchlist entry
+    watchlist, created = Watchlist.objects.get_or_create(
+        user=request.user,
+        title=title
+    )
+    
+    watchlist.mark_as_watched()
+    request.user.update_stats()
+    
+    return JsonResponse({
+        'success': True,
+        'is_watched': True,
+        'watched_at': watchlist.watched_at.isoformat() if watchlist.watched_at else None
     })
 
 
@@ -163,3 +237,27 @@ def remove_watchlist(request, omdb_id):
     request.user.update_stats()
     
     return JsonResponse({'success': True})
+
+
+@login_required
+def get_watchlist_status(request, omdb_id):
+    """Get watchlist status for a title (for AJAX)."""
+    title = get_object_or_404(Title, omdb_id=omdb_id)
+    
+    watchlist = Watchlist.objects.filter(
+        user=request.user,
+        title=title
+    ).first()
+    
+    rating = Rating.objects.filter(
+        user=request.user,
+        title=title
+    ).first()
+    
+    return JsonResponse({
+        'in_watchlist': watchlist is not None,
+        'status': watchlist.status if watchlist else None,
+        'is_watched': watchlist.is_watched if watchlist else False,
+        'rating': rating.score if rating else None,
+        'watched_at': watchlist.watched_at.isoformat() if watchlist and watchlist.watched_at else None
+    })

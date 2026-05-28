@@ -166,12 +166,8 @@ CORS_ALLOWED_ORIGINS = os.getenv(
 # Caching
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/0'),
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        },
-        'KEY_PREFIX': 'ratemyshow',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'ratemyshow-cache',
         'TIMEOUT': 300,  # 5 minutes default
     }
 }

@@ -1,5 +1,5 @@
 {% extends "layouts/base.html" %}
-{% load static %}
+{% load static custom_filters %}
 
 {% block title %}Home - RateMyShow{% endblock %}
 
@@ -135,6 +135,48 @@
                                     <i class="fas fa-star text-yellow-400"></i>
                                     <span>{{ show.avg_rating|floatformat:1 }}/10</span>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- My Recently Watched (Authenticated Users Only) -->
+        {% if user.is_authenticated and user_watched %}
+        <section class="mb-16">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold">✅ My Recently Watched</h2>
+                <a href="{% url 'titles:my_watched' %}" class="text-green-600 hover:text-green-700">View All →</a>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {% for item in user_watched %}
+                <a href="{{ item.title.get_absolute_url }}" class="group">
+                    <div class="relative overflow-hidden rounded-lg">
+                        {% if item.title.poster_url %}
+                        <img src="{{ item.title.poster_url }}" alt="{{ item.title.title }}"
+                            class="w-full h-72 object-cover group-hover:scale-110 transition duration-300">
+                        {% else %}
+                        <div class="w-full h-72 bg-gray-800 flex items-center justify-center">
+                            <i class="fas fa-film text-4xl text-gray-600"></i>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Rating Badge -->
+                        {% if user_ratings|get_item:item.title_id %}
+                        <div class="absolute top-2 left-2 bg-yellow-500 px-2 py-1 rounded-full text-xs font-bold text-black">
+                            ⭐ {{ user_ratings|get_item:item.title_id }}/10
+                        </div>
+                        {% endif %}
+                        
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent opacity-0 group-hover:opacity-100 transition">
+                            <div class="absolute bottom-0 left-0 right-0 p-4">
+                                <h3 class="font-bold line-clamp-2">{{ item.title.title }}</h3>
+                                {% if item.watched_at %}
+                                <p class="text-xs text-gray-400 mt-2">{{ item.watched_at|date:"M d" }}</p>
+                                {% endif %}
                             </div>
                         </div>
                     </div>

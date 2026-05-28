@@ -85,7 +85,7 @@ class OMDBService:
                 'title': omdb_data.get('Title'),
                 'type': omdb_data.get('Type', 'movie').lower(),
                 'year': self._parse_year(omdb_data.get('Year')),
-                'released_date': omdb_data.get('Released'),
+                'released_date': self._parse_date(omdb_data.get('Released')),
                 'rated': omdb_data.get('Rated', ''),
                 'runtime': self._parse_runtime(omdb_data.get('Runtime')),
                 'plot': omdb_data.get('Plot', ''),
@@ -159,6 +159,18 @@ class OMDBService:
             return None
         try:
             return float(value_str)
+        except ValueError:
+            return None
+    
+    @staticmethod
+    def _parse_date(date_str: str) -> Optional[str]:
+        """Parse date from OMDB format (e.g., '14 Oct 1994') to YYYY-MM-DD."""
+        if not date_str or date_str == 'N/A':
+            return None
+        try:
+            from datetime import datetime
+            parsed = datetime.strptime(date_str, '%d %b %Y')
+            return parsed.strftime('%Y-%m-%d')
         except ValueError:
             return None
     
